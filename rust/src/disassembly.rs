@@ -16,7 +16,7 @@
 
 use binaryninjacore_sys::*;
 
-use crate::string::BnString;
+use crate::string::{BnString, BnStr};
 use crate::{BN_FULL_CONFIDENCE, BN_INVALID_EXPR};
 
 use crate::rc::*;
@@ -60,6 +60,10 @@ impl InstructionTextToken {
 
     pub fn set_context(&mut self, context: InstructionTextTokenContext) {
         self.0.context = context;
+    }
+
+    pub fn text(&self) -> &BnStr {
+        unsafe { BnStr::from_raw(self.0.text) }
     }
 }
 
