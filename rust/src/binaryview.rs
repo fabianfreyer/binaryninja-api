@@ -29,6 +29,7 @@ use crate::fileaccessor::FileAccessor;
 use crate::filemetadata::FileMetadata;
 use crate::flowgraph::FlowGraph;
 use crate::function::{Function, NativeBlock};
+use crate::linearview::{LinearViewCursor, LinearViewLinesIterator};
 use crate::platform::Platform;
 use crate::section::{Section, SectionBuilder};
 use crate::segment::{Segment, SegmentBuilder};
@@ -666,6 +667,48 @@ pub trait BinaryViewExt: BinaryViewBase {
                 settings.handle,
             )
         };
+    }
+
+    /// Retrieves a list of the next disassembly lines.
+    ///
+    /// `get_next_linear_disassembly_lines` retrieves an iterator over [LinearDisassemblyLine] objects for the
+    /// next disassembly lines, and updates the [LinearViewCursor] passed in. This function can be called
+    /// repeatedly to get more lines of linear disassembly.
+    ///
+    /// # Arguments
+    /// * `pos` - Position to start retrieving linear disassembly lines from
+    fn get_next_linear_disassembly_lines(&self, pos: &mut LinearViewCursor) -> LinearViewLinesIterator {
+        let mut result = LinearViewLinesIterator::empty();
+
+        while result.len() == 0 {
+            result = pos.lines();
+            if !pos.next() {
+                return result
+            }
+        }
+
+        result
+    }
+
+    /// Retrieves a list of the next disassembly lines.
+    ///
+    /// `get_previous_linear_disassembly_lines` retrieves an iterator over [LinearDisassemblyLine] objects for the
+    /// previous disassembly lines, and updates the [LinearViewCursor] passed in. This function can be called
+    /// repeatedly to get more lines of linear disassembly.
+    ///
+    /// # Arguments
+    /// * `pos` - Position to start retrieving linear disassembly lines from
+    fn get_previous_linear_disassembly_lines(&self, pos: &mut LinearViewCursor) -> LinearViewLinesIterator {
+        let mut result = LinearViewLinesIterator::empty();
+        while result.len() == 0 {
+            if !pos.previous() {
+                return result
+            }
+
+            result = pos.lines();
+        }
+
+        result
     }
 }
 
