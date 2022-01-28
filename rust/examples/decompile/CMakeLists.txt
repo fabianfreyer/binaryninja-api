@@ -1,5 +1,3 @@
-cmake_minimum_required(VERSION 3.9 FATAL_ERROR)
-
 project(test_headless)
 
 file(GLOB PLUGIN_SOURCES
