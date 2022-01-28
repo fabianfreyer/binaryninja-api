@@ -225,13 +225,6 @@ pub struct DisassemblySettings {
 }
 
 impl DisassemblySettings {
-    #[allow(unused)]
-    pub(crate) unsafe fn from_raw(handle: *mut BNDisassemblySettings) -> Ref<Self> {
-        debug_assert!(!handle.is_null());
-
-        Ref::new(Self { handle })
-    }
-
     pub fn new() -> Ref<Self> {
         unsafe {
             let handle = BNCreateDisassemblySettings();
