@@ -217,7 +217,7 @@ impl Drop for DisassemblyTextLine {
     }
 }
 
-pub use binaryninjacore_sys::BNDisassemblyOption as DisassemblyOption;
+pub type DisassemblyOption = BNDisassemblyOption;
 
 #[derive(PartialEq, Eq, Hash)]
 pub struct DisassemblySettings {
