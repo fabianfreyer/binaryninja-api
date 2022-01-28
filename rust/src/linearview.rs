@@ -412,7 +412,7 @@ impl Drop for LinearViewLinesIterator {
 pub type LinearDisassemblyLineType = BNLinearDisassemblyLineType;
 
 pub struct LinearDisassemblyLine {
-    r#type: LinearDisassemblyLineType,
+    t: LinearDisassemblyLineType,
     function: Ref<Function>,
     contents: BNDisassemblyTextLine,
 }
@@ -424,7 +424,7 @@ impl LinearDisassemblyLine {
         let function = Function::from_raw(line.function);
         let contents = line.contents;
         Self {
-            r#type: linetype,
+            t: linetype,
             function,
             contents,
         }
@@ -455,7 +455,7 @@ impl LinearDisassemblyLine {
     }
 
     pub fn line_type(&self) -> LinearDisassemblyLineType {
-        self.r#type
+        self.t
     }
 }
 
