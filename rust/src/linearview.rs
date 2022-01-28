@@ -212,24 +212,6 @@ impl ToOwned for LinearViewObject {
 unsafe impl Send for LinearViewObject {}
 unsafe impl Sync for LinearViewObject {}
 
-pub struct LinearViewObjectIdentifier {
-    handle: *mut BNLinearViewObjectIdentifier,
-}
-
-impl LinearViewObjectIdentifier {
-    #[allow(unused)]
-    pub(crate) unsafe fn from_raw(handle: *mut BNLinearViewObjectIdentifier) -> Self {
-        debug_assert!(!handle.is_null());
-        Self { handle }
-    }
-}
-
-impl Drop for LinearViewObjectIdentifier {
-    fn drop(&mut self) {
-        unsafe { BNFreeLinearViewObjectIdentifier(self.handle) }
-    }
-}
-
 #[derive(Eq)]
 pub struct LinearViewCursor {
     pub(crate) handle: *mut binaryninjacore_sys::BNLinearViewCursor,
