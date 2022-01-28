@@ -6,6 +6,8 @@ use crate::function::Function;
 
 use crate::rc::*;
 
+use std::mem;
+
 pub struct LinearViewObject {
     pub(crate) handle: *mut BNLinearViewObject,
 }
@@ -279,11 +281,12 @@ impl LinearViewCursor {
         unsafe { BNLinearViewCursorNext(self.handle) }
     }
 
-    pub fn lines(&self) -> LinearViewLinesIterator {
+    pub fn lines(&self) -> Array<LinearDisassemblyLine> {
         let mut count: usize = 0;
-
-        let lines = unsafe { BNGetLinearViewCursorLines(self.handle, &mut count) };
-        LinearViewLinesIterator::new(count, lines)
+        unsafe {
+            let handles =  BNGetLinearViewCursorLines(self.handle, &mut count);
+            Array::new(handles, count, ())
+        }
     }
 }
 
@@ -336,60 +339,6 @@ impl ToOwned for LinearViewCursor {
 unsafe impl Send for LinearViewCursor {}
 unsafe impl Sync for LinearViewCursor {}
 
-pub struct LinearViewLinesIterator {
-    count: usize,
-    lines: *mut BNLinearDisassemblyLine,
-    offset: usize,
-}
-
-impl LinearViewLinesIterator {
-    pub(crate) fn new(count: usize, lines: *mut BNLinearDisassemblyLine) -> Self {
-        Self {
-            count,
-            lines,
-            offset: 0,
-        }
-    }
-
-    pub(crate) fn empty() -> Self {
-        Self {
-            count: 0,
-            lines: std::ptr::null_mut(),
-            offset: 0,
-        }
-    }
-
-    pub fn len(&self) -> usize {
-        self.count
-    }
-}
-
-impl Iterator for LinearViewLinesIterator {
-    type Item = LinearDisassemblyLine;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        if self.offset >= self.count {
-            return None;
-        }
-        let line = unsafe { LinearDisassemblyLine::from_raw(self.lines.offset(self.offset as _)) };
-
-        self.offset += 1;
-        Some(line)
-    }
-}
-
-
-// FIXME: we get a segmentation fault if this is there. However,
-// I don't understand enough of the API to see where this should get freed otherwise.
-/*
-impl Drop for LinearViewLinesIterator {
-    fn drop(&mut self) {
-         unsafe {
-             BNFreeLinearDisassemblyLines(self.lines, self.count);
-        }
-    }
-}
-*/
 
 pub type LinearDisassemblyLineType = BNLinearDisassemblyLineType;
 
@@ -451,6 +400,25 @@ impl std::fmt::Display for LinearDisassemblyLine {
     }
 }
 
+unsafe impl CoreOwnedArrayProvider for LinearDisassemblyLine {
+    type Raw = BNLinearDisassemblyLine;
+    type Context = ();
+
+    unsafe fn free(raw: *mut BNLinearDisassemblyLine, count: usize, _context: &()) {
+        BNFreeLinearDisassemblyLines(raw, count);
+    }
+}
+
+unsafe impl<'a> CoreOwnedArrayWrapper<'a> for LinearDisassemblyLine {
+    type Wrapped = &'a LinearDisassemblyLine;
+
+    unsafe fn wrap_raw(
+        raw: &'a BNLinearDisassemblyLine,
+        context: &'a (),
+    ) -> Self::Wrapped {
+        mem::transmute(raw)
+    }
+}
 
 pub struct LinearDisassemblyLineTokenIterator {
     count: usize,
