@@ -19,6 +19,8 @@ use binaryninjacore_sys::*;
 use crate::string::BnString;
 use crate::{BN_FULL_CONFIDENCE, BN_INVALID_EXPR};
 
+use crate::rc::*;
+
 use std::convert::From;
 use std::mem;
 use std::ptr;
@@ -208,5 +210,65 @@ impl Drop for DisassemblyTextLine {
         unsafe {
             Vec::from_raw_parts(self.0.tokens, self.0.count, self.0.count);
         }
+    }
+}
+
+pub use binaryninjacore_sys::BNDisassemblyOption as DisassemblyOption;
+
+#[derive(PartialEq, Eq, Hash)]
+pub struct DisassemblySettings {
+    pub(crate) handle: *mut BNDisassemblySettings,
+}
+
+impl DisassemblySettings {
+    #[allow(unused)]
+    pub(crate) unsafe fn from_raw(handle: *mut BNDisassemblySettings) -> Ref<Self> {
+        debug_assert!(!handle.is_null());
+
+        Ref::new(Self { handle })
+    }
+
+    pub fn new() -> Ref<Self> {
+        unsafe {
+            let handle = BNCreateDisassemblySettings();
+
+            debug_assert!(!handle.is_null());
+
+            Ref::new(Self { handle })
+        }
+    }
+
+    pub fn set_option(&mut self, option: DisassemblyOption, state: bool) {
+        unsafe { BNSetDisassemblySettingsOption(self.handle, option, state) }
+    }
+
+    pub fn is_option_set(&mut self, option: DisassemblyOption) -> bool {
+        unsafe { BNIsDisassemblySettingsOptionSet(self.handle, option) }
+    }
+}
+
+impl AsRef<DisassemblySettings> for DisassemblySettings {
+    fn as_ref(&self) -> &Self {
+        self
+    }
+}
+
+impl ToOwned for DisassemblySettings {
+    type Owned = Ref<Self>;
+
+    fn to_owned(&self) -> Self::Owned {
+        unsafe { RefCountable::inc_ref(self) }
+    }
+}
+
+unsafe impl RefCountable for DisassemblySettings {
+    unsafe fn inc_ref(handle: &Self) -> Ref<Self> {
+        Ref::new(Self {
+            handle: BNNewDisassemblySettingsReference(handle.handle),
+        })
+    }
+
+    unsafe fn dec_ref(handle: &Self) {
+        BNFreeDisassemblySettings(handle.handle);
     }
 }
