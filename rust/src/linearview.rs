@@ -6,8 +6,6 @@ use crate::function::Function;
 
 use crate::rc::*;
 
-use std::mem;
-
 pub struct LinearViewObject {
     pub(crate) handle: *mut BNLinearViewObject,
 }
@@ -349,11 +347,10 @@ pub struct LinearDisassemblyLine {
 }
 
 impl LinearDisassemblyLine {
-    pub(crate) unsafe fn from_raw(raw: *mut BNLinearDisassemblyLine) -> Self {
-        let line = *raw;
-        let linetype = line.type_;
-        let function = Function::from_raw(line.function);
-        let contents = line.contents;
+    pub(crate) unsafe fn from_raw(raw: &BNLinearDisassemblyLine) -> Self {
+        let linetype = raw.type_;
+        let function = Function::from_raw(raw.function);
+        let contents = raw.contents;
         Self {
             t: linetype,
             function,
@@ -377,8 +374,8 @@ impl LinearDisassemblyLine {
         self.contents.tagCount
     }
 
-    pub fn tokens(&self) -> LinearDisassemblyLineTokenIterator {
-        LinearDisassemblyLineTokenIterator::new(self.contents.count, self.contents.tokens)
+    pub fn tokens(&self) -> Array<InstructionTextToken> {
+        unsafe { Array::new(self.contents.tokens, self.contents.count, ()) }
     }
 
     pub fn function(&self) -> Ref<Function> {
@@ -392,7 +389,7 @@ impl LinearDisassemblyLine {
 
 impl std::fmt::Display for LinearDisassemblyLine {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        for token in self.tokens() {
+        for token in self.tokens().iter() {
             write!(f, "{}", token.text())?;
         }
 
@@ -410,56 +407,9 @@ unsafe impl CoreOwnedArrayProvider for LinearDisassemblyLine {
 }
 
 unsafe impl<'a> CoreOwnedArrayWrapper<'a> for LinearDisassemblyLine {
-    type Wrapped = &'a LinearDisassemblyLine;
+    type Wrapped = Guard<'a, LinearDisassemblyLine>;
 
-    unsafe fn wrap_raw(
-        raw: &'a BNLinearDisassemblyLine,
-        context: &'a (),
-    ) -> Self::Wrapped {
-        mem::transmute(raw)
-    }
-}
-
-pub struct LinearDisassemblyLineTokenIterator {
-    count: usize,
-    tokens: *mut BNInstructionTextToken,
-    offset: usize,
-}
-
-impl LinearDisassemblyLineTokenIterator {
-    pub(crate) fn new(count: usize, tokens: *mut BNInstructionTextToken) -> Self {
-        Self {
-            count,
-            tokens,
-            offset: 0,
-        }
-    }
-
-    #[allow(unused)]
-    pub(crate) fn empty() -> Self {
-        Self {
-            count: 0,
-            tokens: std::ptr::null_mut(),
-            offset: 0,
-        }
-    }
-
-    pub fn len(&self) -> usize {
-        self.count
-    }
-}
-
-impl Iterator for LinearDisassemblyLineTokenIterator {
-    type Item = InstructionTextToken;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        if self.offset >= self.count {
-            return None;
-        }
-
-        let token = unsafe { *self.tokens.offset(self.offset as _) };
-
-        self.offset = self.offset + 1;
-        Some(InstructionTextToken(token))
+    unsafe fn wrap_raw(raw: &'a Self::Raw, _context: &'a Self::Context) -> Self::Wrapped {
+        Guard::new(LinearDisassemblyLine::from_raw(raw), _context)
     }
 }

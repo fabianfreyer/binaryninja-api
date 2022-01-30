@@ -33,6 +33,9 @@ pub struct InstructionTextToken(pub(crate) BNInstructionTextToken);
 // TODO : Consider remodeling this after types::EnumerationMember
 impl InstructionTextToken {
     // TODO : New vs new_with_value ?
+    pub(crate) unsafe fn from_raw(raw: &BNInstructionTextToken) -> Self {
+        Self(raw.clone())
+    }
 
     pub fn new(type_: InstructionTextTokenType, text: &str, value: u64) -> Self {
         let raw_name = BnString::new(text);
@@ -82,6 +85,23 @@ impl Default for InstructionTextToken {
             typeNames: ptr::null_mut(),
             namesCount: 0,
         })
+    }
+}
+
+unsafe impl CoreOwnedArrayProvider for InstructionTextToken {
+    type Raw = BNInstructionTextToken;
+    type Context = ();
+
+    unsafe fn free(raw: *mut BNInstructionTextToken, count: usize, _context: &()) {
+        BNFreeInstructionText(raw, count);
+    }
+}
+
+unsafe impl<'a> CoreOwnedArrayWrapper<'a> for InstructionTextToken {
+    type Wrapped = Guard<'a, InstructionTextToken>;
+
+    unsafe fn wrap_raw(raw: &'a Self::Raw, _context: &'a Self::Context) -> Self::Wrapped {
+        Guard::new(InstructionTextToken::from_raw(raw), _context)
     }
 }
 
