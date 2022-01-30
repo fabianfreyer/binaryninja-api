@@ -402,7 +402,12 @@ unsafe impl CoreOwnedArrayProvider for LinearDisassemblyLine {
     type Context = ();
 
     unsafe fn free(raw: *mut BNLinearDisassemblyLine, count: usize, _context: &()) {
-        BNFreeLinearDisassemblyLines(raw, count);
+        // FIXME: If freeing, we abort with:
+        // <program>(<pid>,0x108d9ce00) malloc: *** error for object 0x7fd8a66d4c90: pointer being freed was not allocated
+        // <program>(<pid>,0x108d9ce00) malloc: *** set a breakpoint in malloc_error_break to debug
+        // [1]    <pid> abort      cargo run /bin/cat
+
+        // BNFreeLinearDisassemblyLines(raw, count);
     }
 }
 
