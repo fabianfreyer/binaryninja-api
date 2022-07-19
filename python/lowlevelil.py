@@ -2684,7 +2684,7 @@ class LowLevelILFunction:
 			return "<llil func: anonymous>"
 
 	def __len__(self):
-		return int(core.BNGetLowLevelILInstructionCount(self.handle))
+		return int(core.BNGetLowLevelILExprCount(self.handle))
 
 	def __eq__(self, other):
 		if not isinstance(other, self.__class__):
